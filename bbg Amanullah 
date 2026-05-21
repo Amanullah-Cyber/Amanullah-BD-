@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Security Dashboard</title>
+    <style>
+        #status-display {
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ccc;
+            background-color: #f9f9f9;
+            font-family: monospace;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="status-display">System ready...</div>
+
+    <script>
+        let user = { id: "user123", strikeCount: 0, isBanned: false, banExpiry: null };
+
+        function processInput(inputData, type) {
+            if (!checkAccess()) {
+                updateUI("ACCESS DENIED: ACCOUNT BANNED", "#ff0055");
+                return;
+            }
+
+            if (runFilters(inputData)) {
+                updateUI("SUCCESS: " + type + " IS SAFE", "#00ff9d");
+            } else {
+                updateUI("ALERT: THREAT DETECTED", "#ff0055");
+                alert("WARNING: THREAT DETECTED!");
+                handleStrike();
+            }
+        }
+
+        function runFilters(data) {
+            if (!data || data.length < 5) return false;
+            const forbidden = ["malware", "spam", "virus", "phishing", "drop", "select"];
+            const hasForbidden = forbidden.some(word => data.toLowerCase().includes(word));
+            const hasDangerousChars = ["<", ">", ";", "--"].some(char => data.includes(char));
+            return !(hasForbidden || hasDangerousChars);
+        }
+
+        function updateUI(message, color) {
+            const display = document.getElementById("status-display");
+            display.style.border = `2px solid ${color}`;
+            display.style.backgroundColor = (color === "#ff0055") ? "#ffe6e6" : "#e6fff2";
+            display.innerHTML = `<h2 style="color:${color};">${message}</h2>`;
+        }
+
+        function handleStrike() {
+            user.strikeCount++;
+            if (user.strikeCount >= 4) {
+                applyBan();
+            }
+        }
+
+        function applyBan() {
+            user.isBanned = true;
+            user.banExpiry = new Date().getTime() + (5 * 24 * 60 * 60 * 1000);
+            updateUI("ACCOUNT BANNED FOR 5 DAYS", "#ff0055");
+        }
+
+        function checkAccess() {
+            if (user.isBanned) {
+                let now = new Date().getTime();
+                if (now > user.banExpiry) {
+                    user.isBanned = false;
+                    user.strikeCount = 0;
+                    return true;
+                }
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>
